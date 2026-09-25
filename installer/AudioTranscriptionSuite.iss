@@ -4,10 +4,16 @@
 #ifndef Gpu
   #define Gpu "Nvidia"
 #endif
+#ifndef SuiteVersion
+  #error SuiteVersion is required. Build using Build-Installer.ps1.
+#endif
+#ifndef ServiceVersion
+  #error ServiceVersion is required. Build using Build-Installer.ps1.
+#endif
 [Setup]
 AppId={{852B60B4-72C7-4DD2-A3CE-02E2FE29C4C0}
 AppName=Audio Transcription Suite
-AppVersion=0.1.0
+AppVersion={#SuiteVersion}
 DefaultDirName={localappdata}\Programs\AudioTranscriptionSuite
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64os
@@ -15,7 +21,7 @@ ArchitecturesInstallIn64BitMode=x64os
 WizardStyle=modern
 DisableProgramGroupPage=yes
 OutputDir={#SuiteRoot}\dist
-OutputBaseFilename=AudioTranscriptionSuite-{#Gpu}-Setup-0.1.0
+OutputBaseFilename=AudioTranscriptionSuite-{#Gpu}-Setup-{#SuiteVersion}
 Compression=lzma2/fast
 SolidCompression=no
 DiskSpanning=no
@@ -31,15 +37,20 @@ InfoBeforeFile=SetupNotes.txt
 Source: "{#SuiteRoot}\CoreMcp.Server.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Configure-Claude.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
 Source: "Install-Dependencies.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
-Source: "{#SuiteRoot}\AudioTranscriptionService-{#Gpu}-Setup-0.1.0.exe"; DestDir: "{tmp}\suite-payload"; DestName: "AudioTranscriptionService-Setup.exe"; Flags: deleteafterinstall nocompression
+Source: "Progress.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
+Source: "Claude-Deployment.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
+Source: "Install-ClaudeElevated.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
+Source: "{#SuiteRoot}\AudioTranscriptionService-{#Gpu}-Setup-{#ServiceVersion}.exe"; DestDir: "{tmp}\suite-payload"; DestName: "AudioTranscriptionService-Setup.exe"; Flags: deleteafterinstall nocompression
 
 [Code]
+#include "ProgressUI.iss"
 var
   DatabasePage: TInputFileWizardPage;
   SetupFailed: Boolean;
 
 procedure InitializeWizard;
 begin
+  InitializeSuiteProgress;
   DatabasePage := CreateInputFilePage(wpSelectDir, 'Transcript database',
     'Choose the database used by Audio Transcription Service.',
     'The default matches a new installation. If you customized database.path in the service configuration, select that location. The database does not have to exist yet.');
@@ -61,23 +72,47 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  ExitCode: Integer;
-  Params, LogPath: String;
+  ExitCode, RunNumber: Integer;
+  Params, LogPath, LogRoot, RunDirectory: String;
 begin
   if CurStep = ssPostInstall then
   begin
-    WizardForm.StatusLabel.Caption := 'Installing Audio Transcription Service and latest Claude. This may take several minutes...';
-    LogPath := ExpandConstant('{localappdata}\AudioTranscriptionSuite\logs\setup.log');
+    BeginSuiteProgress;
+    LogRoot := ExpandConstant('{localappdata}\AudioTranscriptionSuite\logs\') + GetDateTimeString('yyyymmdd-hhnnss', '-', ':');
+    RunDirectory := LogRoot;
+    RunNumber := 0;
+    while DirExists(RunDirectory) do
+    begin
+      RunNumber := RunNumber + 1;
+      RunDirectory := LogRoot + '-' + IntToStr(RunNumber);
+    end;
+    ForceDirectories(RunDirectory);
+    LogPath := RunDirectory + '\setup.log';
     Params := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\installer\Install-Dependencies.ps1') +
       '" -PayloadDirectory "' + ExpandConstant('{tmp}\suite-payload') + '" -ServerPath "' + ExpandConstant('{app}\CoreMcp.Server.exe') +
       '" -DatabasePath "' + DatabasePage.Values[0] + '" -LogPath "' + LogPath + '"';
-    if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), Params, '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
-      SetupFailed := True
-    else
-      SetupFailed := ExitCode <> 0;
-    if SetupFailed then
-      MsgBox('Suite setup is incomplete. See ' + LogPath + ' for the error, then run setup again. Installed components have been retained.', mbError, MB_OK);
+    try
+      ExitCode := -1;
+      try
+        if not ExecAndLogOutput(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), Params, '', SW_SHOWNORMAL, ewWaitUntilTerminated, ExitCode, @SuiteOutput) then
+          ExitCode := -1;
+      except
+        Log(GetExceptionMessage);
+        ExitCode := -1;
+      end;
+      SetupFailed := not FinishSuiteProgress(ExitCode);
+      if SetupFailed then
+        MsgBox('Setup failed during: ' + StageNames[ActiveStage] + '. See ' + LogPath + ' for details. Installed components have been retained.', mbError, MB_OK);
+    finally
+      SuiteProgress.Hide;
+    end;
   end;
+end;
+
+procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
+begin
+  WizardForm.StatusLabel.Caption := 'Installing MCP Server and preparing installation files...';
+  WizardForm.PageDescriptionLabel.Caption := 'Preparation progress - component installation follows.';
 end;
 
 procedure CurPageChanged(CurPageID: Integer);

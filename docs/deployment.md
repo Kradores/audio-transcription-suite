@@ -1,30 +1,32 @@
 # GitHub Releases
 
-The canonical installer distribution channel is [Kradores/audio-transcription-suite releases](https://github.com/Kradores/audio-transcription-suite/releases). Installers and bundled executable payloads are not committed to Git or Git LFS. The repository contains the Suite installer source, build script, tests, and documentation.
+The distribution channel is [Kradores/audio-transcription-suite releases](https://github.com/Kradores/audio-transcription-suite/releases). Executables, compiled installers, preview output, and logs are excluded from Git.
 
-## First release
+## v0.2.1 assets
 
-Prepare **Audio Transcription Suite v0.1.0** as a draft targeting the `v0.1.0` source tag, with these three assets:
-
-- `AudioTranscriptionSuite-Amd-Setup-0.1.0.exe`
-- `AudioTranscriptionSuite-Nvidia-Setup-0.1.0.exe`
+- `AudioTranscriptionSuite-Amd-Setup-0.2.1.exe`
+- `AudioTranscriptionSuite-Nvidia-Setup-0.2.1.exe`
 - `SHA256SUMS.txt`
 
-Use the existing files in `dist/` without rebuilding or signing. Both installers are unsigned. Preserve the existing upstream Audio Transcription Service releases. This Suite release bundles the selected service 0.1.0 installer and CoreMcp; setup downloads the latest official Claude x64 MSIX and verifies its signature and Anthropic publisher. Unsigned Suite distribution does not disable that verification.
+Use the existing compiled installers without rebuilding or signing. Preserve the older v0.1.0 draft and upstream service releases. The suite bundles service 0.2.0 and CoreMcp; it downloads the latest official Claude MSIX at installation time and verifies its signature and Anthropic publisher.
 
-The installers require Windows x64, internet access, and a compatible GPU and driver. AMD and NVIDIA builds are alternatives, not side-by-side installations. Run as the normal Windows user with Claude closed. Start the audio service after setup, then open Claude and sign in interactively. Windows may show SmartScreen or unknown-publisher warnings for the unsigned installers.
+## Requirements and usage
 
-## Preparation and verification
+Windows 11 x64, internet access, and a compatible GPU/driver are required. AMD targets supported gfx1031 hardware and was validated upstream on Radeon RX 6800M. Other AMD architectures are not assumed compatible. AMD and NVIDIA builds are alternatives, not side-by-side installations.
 
-1. Run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tests/Test-Configuration.ps1`.
-2. Confirm the source commit excludes executable payloads, `dist/`, and test scratch directories. Tag that commit `v0.1.0` and push the source and tag.
-3. Calculate SHA-256 hashes of both final installers. Write `dist/SHA256SUMS.txt` as one lowercase hash, two spaces, and the exact asset filename per line.
-4. Create the draft release and upload the two installers and checksum file. Do not replace or modify the binaries during release preparation.
-5. Verify all three uploaded filenames, byte sizes, and GitHub SHA-256 asset digests against the local files. If an uploaded digest is unavailable, download that asset and calculate its hash for comparison.
-6. Confirm the release is still a draft and provide its review link. Publishing is a separate action after review.
+Run normally from an administrator-enabled Windows account with Claude closed. Approve Claude’s elevation prompt using the same account; alternate administrator credentials are rejected. Suite installers are unsigned and may trigger SmartScreen or unknown-publisher warnings. Checksums verify integrity, not publisher identity.
 
-Configuration tests and asset integrity checks do not validate real installation, Claude deployment, GPU operation, or account sign-in. Clean-machine Windows x64 installation testing is unverified for this release unless separately recorded.
+See the [getting-started guide](getting-started.md) for regular-user instructions.
 
-## Publication
+## Publish and verify
 
-Draft assets are not available to public visitors. After the first stable release is published, use [the latest-release URL](https://github.com/Kradores/audio-transcription-suite/releases/latest) as the stable user-facing download link, and update the README's draft status. Keep published binaries and checksums unchanged; distribute later binary changes under a new version.
+1. Check that the remote branch has no conflicting changes and the version tag does not already exist.
+2. Commit source and documentation only, then push the commit and matching version tag.
+3. Verify existing installer hashes and write `dist/SHA256SUMS.txt`: lowercase SHA-256, two spaces, exact filename, one line per installer.
+4. Create a draft release and upload both installers and the checksum file.
+5. Compare uploaded names, sizes, and GitHub SHA-256 digests with local files. If a digest is unavailable, download the asset and hash it.
+6. Publish as the latest stable release and verify public metadata and download URLs. Do not replace published binaries; use a new version for binary changes.
+
+## Validation record
+
+The user successfully tested AMD and NVIDIA suite 0.2.0 installations. Suite 0.2.1 passed automated configuration, deployment, streaming-download, and simulated wizard success/failure checks, plus visual layout inspection. Real installation, UAC/MSIX deployment, and GPU transcription have not yet been verified specifically with suite 0.2.1.

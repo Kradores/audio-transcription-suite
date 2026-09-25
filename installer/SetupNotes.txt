@@ -1,9 +1,11 @@
 This installer installs Audio Transcription Service (NVIDIA build), CoreMcp, and the latest Claude Desktop for the current Windows user.
 
-Internet access and a compatible NVIDIA GPU/driver are required. Quit Claude before proceeding. Existing Claude settings and other MCP servers are preserved; a backup is created before changing an existing configuration.
+Windows 11 x64, internet access, and a compatible NVIDIA GPU/driver are required. Quit Claude before proceeding. Existing Claude settings and other MCP servers are preserved; a backup is created before changing an existing configuration.
 
-Run setup as your normal Windows user. The Claude MSIX installation supports chat and local MCP; this installer does not enable optional Windows features for Cowork.
+Run setup normally under an administrator-enabled Windows account and approve the administrator prompt for Claude. Do not enter credentials for a different account: setup stops to avoid registering Claude under the wrong user. Optional Windows features for Cowork are not enabled.
 
 If you have customized the service database location, select the matching path on the next page. Start Audio Transcription Service after installation to create the database and record transcripts.
 
 Uninstalling the suite removes its MCP executable and setup helpers. Audio Transcription Service and Claude remain separately uninstallable through Windows Settings. Transcript data and Claude configuration/backups are retained.
+
+The bundled service includes the default small Whisper model, so a fresh installation does not need to download it before transcription. The service installer manages model provisioning and preserves existing configuration and model directories.
