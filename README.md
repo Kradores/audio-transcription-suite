@@ -2,7 +2,7 @@
 
 ## Download
 
-Installers are distributed through [GitHub Releases](https://github.com/Kradores/audio-transcription-suite/releases), not stored in Git. Get **v0.2.1** from the [release page](https://github.com/Kradores/audio-transcription-suite/releases/tag/v0.2.1), or use [latest release](https://github.com/Kradores/audio-transcription-suite/releases/latest) for the current stable version.
+Installers are distributed through [GitHub Releases](https://github.com/Kradores/audio-transcription-suite/releases/latest), not stored in Git. Get **v0.2.1** from the [release page](https://github.com/Kradores/audio-transcription-suite/releases/tag/v0.2.1), or use [latest release](https://github.com/Kradores/audio-transcription-suite/releases/latest) for the current stable version.
 
 After installation, follow the **[getting-started guide](docs/getting-started.md)** to start transcription and find conversations with Claude.
 
